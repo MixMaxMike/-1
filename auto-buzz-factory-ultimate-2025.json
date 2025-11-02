@@ -1,0 +1,1104 @@
+{
+  "name": "🏭 Auto Buzz Factory ULTIMATE 2025",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "🎬 Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 500],
+      "id": "trigger-manual"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "hours", "hoursInterval": 6}]
+        }
+      },
+      "name": "⏰ Every 6h - Collect Trends",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "trigger-schedule"
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/feed/"
+      },
+      "name": "📡 RSS TechCrunch",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 100],
+      "id": "rss-techcrunch"
+    },
+    {
+      "parameters": {
+        "url": "https://www.theverge.com/rss/index.xml"
+      },
+      "name": "📡 RSS The Verge",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 180],
+      "id": "rss-verge"
+    },
+    {
+      "parameters": {
+        "url": "https://www.wired.com/feed/rss"
+      },
+      "name": "📡 RSS Wired",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 260],
+      "id": "rss-wired"
+    },
+    {
+      "parameters": {
+        "url": "https://arstechnica.com/feed/"
+      },
+      "name": "📡 RSS Ars Technica",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 340],
+      "id": "rss-ars"
+    },
+    {
+      "parameters": {
+        "url": "https://habr.com/ru/flows/ai/rss/"
+      },
+      "name": "📡 RSS Habr AI",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 420],
+      "id": "rss-habr"
+    },
+    {
+      "parameters": {
+        "url": "https://vc.ru/ai/rss"
+      },
+      "name": "📡 RSS VC.ru AI",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 500],
+      "id": "rss-vc"
+    },
+    {
+      "parameters": {
+        "url": "https://tproger.ru/tag/ai/feed/"
+      },
+      "name": "📡 RSS Tproger AI",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 580],
+      "id": "rss-tproger"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex"
+      },
+      "name": "🔗 Merge All RSS",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [700, 340],
+      "id": "merge-rss"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const title = item.json.title || '';\n  const description = item.json.description || item.json.content || '';\n  const url = item.json.link || item.json.url || '';\n  \n  if (!title || title.length < 20) continue;\n  \n  const text = (title + ' ' + description).toLowerCase();\n  \n  // AI Keywords scoring\n  const aiKeywords = ['sora', 'veo', 'runway', 'luma', 'pika', 'gpt', 'claude', 'gemini', 'midjourney', 'dall-e', 'stable diffusion', 'ai video', 'нейросеть', 'генерация видео', 'ai tools', 'machine learning', 'artificial intelligence'];\n  \n  // Video Keywords scoring\n  const videoKeywords = ['video', 'shorts', 'tiktok', 'reels', 'youtube', 'viral', 'вирусный', 'видео', 'ролик'];\n  \n  // Trend Keywords scoring\n  const trendKeywords = ['новый', 'тренд', 'trend', 'breaking', 'new', 'latest', 'обзор', 'review', 'tutorial', 'how to'];\n  \n  const foundAI = aiKeywords.filter(kw => text.includes(kw));\n  const foundVideo = videoKeywords.filter(kw => text.includes(kw));\n  const foundTrend = trendKeywords.filter(kw => text.includes(kw));\n  \n  const allKeywords = [...foundAI, ...foundVideo, ...foundTrend];\n  \n  if (foundAI.length === 0) continue; // Skip if no AI keywords\n  \n  // Calculate viral score\n  const aiScore = foundAI.length * 15;\n  const videoScore = foundVideo.length * 10;\n  const trendScore = foundTrend.length * 5;\n  const viralScore = Math.min(100, aiScore + videoScore + trendScore + Math.random() * 10);\n  \n  results.push({\n    json: {\n      title: title.substring(0, 250),\n      description: description.substring(0, 800),\n      url,\n      keywords: [...new Set(allKeywords)],\n      viralScore: Math.round(viralScore),\n      pubDate: item.json.pubDate || new Date().toISOString(),\n      source: item.json.creator || 'rss',\n      collected_at: new Date().toISOString(),\n      status: 'ready_for_analysis'\n    }\n  });\n}\n\n// Sort by viral score and return top 10\nresults.sort((a, b) => b.json.viralScore - a.json.viralScore);\nreturn results.slice(0, 10);"
+      },
+      "name": "🎯 Viral Score & Filter Top 10",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 340],
+      "id": "score-filter"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"You are a viral content expert for YouTube Shorts, TikTok, and Instagram Reels. Create a JSON response (ONLY valid JSON, no markdown) with these exact fields:\\n\\n{\\n  \\\"titleVariations\\\": [\\\"Title 1 (max 100 chars)\\\", \\\"Title 2\\\", \\\"Title 3\\\"],\\n  \\\"hook\\\": \\\"3-second attention-grabbing opening (max 200 chars)\\\",\\n  \\\"mainContent\\\": \\\"30-50 second main content script with key points (max 800 chars)\\\",\\n  \\\"cta\\\": \\\"Call to action (max 100 chars)\\\",\\n  \\\"hashtags\\\": [\\\"#hashtag1\\\", \\\"#hashtag2\\\", ... 15 hashtags],\\n  \\\"description\\\": \\\"Video description optimized for SEO (max 200 chars)\\\",\\n  \\\"videoPrompt\\\": \\\"Detailed cinematic prompt for AI video generation (Sora/Veo/Runway style): describe camera movements, lighting, scene composition, mood, colors. Be very specific. (max 1000 chars)\\\",\\n  \\\"thumbnailPrompt\\\": \\\"Detailed prompt for thumbnail image generation (DALL-E/Midjourney style): describe composition, text overlay ideas, colors, emotions, style. Be very specific. (max 500 chars)\\\",\\n  \\\"voiceoverScript\\\": \\\"Complete voiceover text with natural pauses marked by ... (max 1000 chars)\\\",\\n  \\\"musicStyle\\\": \\\"Music style recommendation (e.g. 'upbeat electronic', 'dramatic cinematic', 'calm ambient')\\\",\\n  \\\"targetPlatforms\\\": [\\\"youtube_shorts\\\", \\\"tiktok\\\", \\\"instagram_reels\\\"],\\n  \\\"estimatedViralScore\\\": 85\\n}\\n\\nTopic: {{ $json.title }}\\nDescription: {{ $json.description }}\\nKeywords: {{ $json.keywords.join(', ') }}\\nSource viral score: {{ $json.viralScore }}\\n\\nCreate a viral video script optimized for maximum engagement. Focus on trending AI topics.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.85,\n    \"maxOutputTokens\": 4096,\n    \"topP\": 0.95\n  }\n}",
+        "options": {}
+      },
+      "name": "🤖 Gemini 2.0 Flash - Script Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1100, 250],
+      "id": "gemini-script",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.candidates?.[0]?.content?.parts?.[0]?.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "✅ Gemini Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1300, 250],
+      "id": "gemini-check"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a viral content expert. Create ONLY valid JSON (no markdown) with: titleVariations (array of 3), hook, mainContent, cta, hashtags (15), description, videoPrompt, thumbnailPrompt, voiceoverScript, musicStyle, targetPlatforms, estimatedViralScore\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Topic: {{ $json.title }}. Description: {{ $json.description }}. Keywords: {{ $json.keywords }}. Create viral video script in JSON.\"\n    }\n  ],\n  \"temperature\": 0.85,\n  \"max_tokens\": 4096\n}",
+        "options": {}
+      },
+      "name": "🚀 Groq Llama 3.3 - Fallback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1300, 400],
+      "id": "groq-fallback",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2",
+          "name": "Groq API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and prepare data\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  let scriptData;\n  \n  // Try to extract JSON from Gemini or Groq response\n  const responseText = item.json.candidates?.[0]?.content?.parts?.[0]?.text || \n                       item.json.choices?.[0]?.message?.content || \n                       '';\n  \n  // Remove markdown code blocks if present\n  const cleanText = responseText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  \n  try {\n    scriptData = JSON.parse(cleanText);\n  } catch (e) {\n    console.error('Failed to parse AI response:', e);\n    continue;\n  }\n  \n  // Merge with original trend data\n  results.push({\n    json: {\n      ...item.json,\n      script: scriptData,\n      status: 'ready_for_generation',\n      processed_at: new Date().toISOString()\n    }\n  });\n}\n\nreturn results;"
+      },
+      "name": "🔄 Parse & Merge Script Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 320],
+      "id": "parse-script"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-image-1\",\n  \"prompt\": \"{{ $json.script.thumbnailPrompt }}\",\n  \"n\": 1,\n  \"size\": \"1024x1024\",\n  \"quality\": \"high\",\n  \"style\": \"vivid\",\n  \"output_format\": \"png\"\n}",
+        "options": {}
+      },
+      "name": "🎨 DALL-E 3 - Thumbnail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1700, 200],
+      "id": "dalle-thumbnail",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-5-2025-08-07\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Sora 2.0 video generation expert. Enhance and expand the video prompt to be highly detailed and cinematic. Include: camera movements, lighting, scene composition, character details, mood, colors, transitions. Output ONLY the enhanced prompt text, nothing else.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Enhance this video prompt for Sora 2.0: {{ $json.script.videoPrompt }}\"\n    }\n  ],\n  \"max_completion_tokens\": 1000\n}",
+        "options": {}
+      },
+      "name": "📝 GPT-5 - Expand Video Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1700, 320],
+      "id": "gpt5-expand",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/sora/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.choices[0].message.content }}\",\n  \"duration\": 10,\n  \"aspect_ratio\": \"9:16\",\n  \"resolution\": \"1080p\",\n  \"fps\": 30\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "🎬 Sora 2.0 - Generate Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1900, 200],
+      "id": "sora-video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        }
+      },
+      "name": "❓ Sora Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2100, 200],
+      "id": "sora-check"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/veo-3:generate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": {\n    \"text\": \"{{ $json.script.videoPrompt }}\"\n  },\n  \"videoConfig\": {\n    \"duration\": \"10s\",\n    \"aspectRatio\": \"9:16\",\n    \"quality\": \"high\"\n  }\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "🎥 Google Veo 3 - Fallback Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2100, 350],
+      "id": "veo-video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "4",
+          "name": "Google AI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.state }}",
+              "rightValue": "COMPLETE",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        }
+      },
+      "name": "❓ Veo Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2300, 350],
+      "id": "veo-check"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.runwayml.com/v1/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.script.videoPrompt }}\",\n  \"model\": \"gen3a_turbo\",\n  \"duration\": 10,\n  \"ratio\": \"9:16\",\n  \"watermark\": false\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "🎭 Runway Gen-3 - Fallback 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2300, 500],
+      "id": "runway-video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "5",
+          "name": "Runway API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "SUCCEEDED",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        }
+      },
+      "name": "❓ Runway Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2500, 500],
+      "id": "runway-check"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.lumalabs.ai/dream-machine/v1/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.script.videoPrompt }}\",\n  \"aspect_ratio\": \"9:16\",\n  \"loop\": false\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "🌙 Luma Dream Machine - Fallback 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2500, 650],
+      "id": "luma-video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "6",
+          "name": "Luma API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition"
+      },
+      "name": "🔗 Merge Video Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [2700, 400],
+      "id": "merge-video"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.script.voiceoverScript }}\",\n  \"model_id\": \"eleven_multilingual_v2\",\n  \"voice_settings\": {\n    \"stability\": 0.75,\n    \"similarity_boost\": 0.85,\n    \"style\": 0.5,\n    \"use_speaker_boost\": true\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "🎙️ ElevenLabs - Voiceover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2900, 300],
+      "id": "elevenlabs-voice",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7",
+          "name": "ElevenLabs API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare final video package with all assets\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const videoUrl = item.json.output?.url || \n                   item.json.video?.url || \n                   item.json.generations?.[0]?.video || \n                   null;\n  \n  const thumbnailUrl = item.json.data?.[0]?.url || null;\n  const audioData = item.binary?.data || null;\n  \n  if (!videoUrl) {\n    console.error('No video generated');\n    continue;\n  }\n  \n  results.push({\n    json: {\n      ...item.json,\n      assets: {\n        video_url: videoUrl,\n        thumbnail_url: thumbnailUrl,\n        audio_data: audioData ? 'attached' : null\n      },\n      status: 'ready_for_post',\n      generated_at: new Date().toISOString()\n    },\n    binary: audioData ? { audio: audioData } : undefined\n  });\n}\n\nreturn results;"
+      },
+      "name": "📦 Package Final Assets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3100, 400],
+      "id": "package-assets"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/youtube/v3/videos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet,status"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"snippet\": {\n    \"title\": \"{{ $json.script.titleVariations[0] }}\",\n    \"description\": \"{{ $json.script.description }}\\n\\n{{ $json.script.hashtags.join(' ') }}\\n\\nOriginal source: {{ $json.url }}\",\n    \"tags\": {{ $json.script.hashtags }},\n    \"categoryId\": \"28\"\n  },\n  \"status\": {\n    \"privacyStatus\": \"public\",\n    \"selfDeclaredMadeForKids\": false\n  }\n}",
+        "options": {}
+      },
+      "name": "📺 YouTube Shorts Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [3300, 250],
+      "id": "youtube-upload",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "8",
+          "name": "YouTube OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v18.0/me/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"video_url\": \"{{ $json.assets.video_url }}\",\n  \"caption\": \"{{ $json.script.titleVariations[0] }}\\n\\n{{ $json.script.description }}\\n\\n{{ $json.script.hashtags.join(' ') }}\",\n  \"media_type\": \"REELS\"\n}",
+        "options": {}
+      },
+      "name": "📱 Instagram Reels Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [3300, 400],
+      "id": "instagram-upload",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9",
+          "name": "Instagram API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"post_info\": {\n    \"title\": \"{{ $json.script.titleVariations[0] }}\",\n    \"privacy_level\": \"PUBLIC_TO_EVERYONE\",\n    \"disable_duet\": false,\n    \"disable_comment\": false,\n    \"disable_stitch\": false,\n    \"video_cover_timestamp_ms\": 1000\n  },\n  \"source_info\": {\n    \"source\": \"FILE_UPLOAD\",\n    \"video_url\": \"{{ $json.assets.video_url }}\"\n  }\n}",
+        "options": {}
+      },
+      "name": "🎵 TikTok Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [3300, 550],
+      "id": "tiktok-upload",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "10",
+          "name": "TikTok API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition"
+      },
+      "name": "🔗 Merge Upload Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [3500, 400],
+      "id": "merge-uploads"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "title": "={{ $json.script.titleVariations[0] }}",
+            "viral_score": "={{ $json.viralScore }}",
+            "video_url": "={{ $json.assets.video_url }}",
+            "youtube_id": "={{ $json.youtube?.id }}",
+            "instagram_id": "={{ $json.instagram?.id }}",
+            "tiktok_id": "={{ $json.tiktok?.share_id }}",
+            "source": "={{ $json.source }}",
+            "keywords": "={{ $json.keywords.join(', ') }}",
+            "status": "published"
+          }
+        },
+        "options": {}
+      },
+      "name": "📊 Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [3700, 300],
+      "id": "sheets-log",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "11",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=✅ *Новое видео опубликовано!*\n\n📺 *Заголовок:* {{ $json.script.titleVariations[0] }}\n🎯 *Viral Score:* {{ $json.viralScore }}/100\n📊 *Источник:* {{ $json.source }}\n\n*Платформы:*\n{{ $json.youtube?.id ? '▪️ YouTube Shorts: https://youtube.com/shorts/' + $json.youtube.id : '' }}\n{{ $json.instagram?.id ? '▪️ Instagram Reels: ' + $json.instagram.permalink : '' }}\n{{ $json.tiktok?.share_id ? '▪️ TikTok: ' + $json.tiktok.share_url : '' }}\n\n🏷️ *Хештеги:* {{ $json.script.hashtags.slice(0, 5).join(' ') }}\n\n⏰ Время: {{ $now.toFormat('dd.MM.yyyy HH:mm') }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "name": "💬 Send Telegram Notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [3700, 500],
+      "id": "telegram-notify",
+      "credentials": {
+        "telegramApi": {
+          "id": "12",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final summary\nconst items = $input.all();\nconst summary = {\n  total_processed: items.length,\n  successful: items.filter(i => i.json.status === 'published').length,\n  failed: items.filter(i => i.json.status !== 'published').length,\n  platforms: {\n    youtube: items.filter(i => i.json.youtube?.id).length,\n    instagram: items.filter(i => i.json.instagram?.id).length,\n    tiktok: items.filter(i => i.json.tiktok?.share_id).length\n  },\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('=== AUTO BUZZ FACTORY COMPLETE ===');\nconsole.log(JSON.stringify(summary, null, 2));\n\nreturn [{ json: summary }];"
+      },
+      "name": "✅ Final Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3900, 400],
+      "id": "summary"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "📡 RSS TechCrunch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS The Verge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Wired",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Ars Technica",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Habr AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS VC.ru AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Tproger AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 6h - Collect Trends": {
+      "main": [
+        [
+          {
+            "node": "📡 RSS TechCrunch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS The Verge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Wired",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Ars Technica",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Habr AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS VC.ru AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📡 RSS Tproger AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📡 RSS TechCrunch": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge All RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📡 RSS The Verge": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge All RSS",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "📡 RSS Wired": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge All RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📡 RSS Ars Technica": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge All RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📡 RSS Habr AI": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge All RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📡 RSS VC.ru AI": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge All RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📡 RSS Tproger AI": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge All RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔗 Merge All RSS": {
+      "main": [
+        [
+          {
+            "node": "🎯 Viral Score & Filter Top 10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎯 Viral Score & Filter Top 10": {
+      "main": [
+        [
+          {
+            "node": "🤖 Gemini 2.0 Flash - Script Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Gemini 2.0 Flash - Script Generation": {
+      "main": [
+        [
+          {
+            "node": "✅ Gemini Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Gemini Success?": {
+      "main": [
+        [
+          {
+            "node": "🔄 Parse & Merge Script Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🚀 Groq Llama 3.3 - Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚀 Groq Llama 3.3 - Fallback": {
+      "main": [
+        [
+          {
+            "node": "🔄 Parse & Merge Script Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔄 Parse & Merge Script Data": {
+      "main": [
+        [
+          {
+            "node": "🎨 DALL-E 3 - Thumbnail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📝 GPT-5 - Expand Video Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 GPT-5 - Expand Video Prompt": {
+      "main": [
+        [
+          {
+            "node": "🎬 Sora 2.0 - Generate Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎬 Sora 2.0 - Generate Video": {
+      "main": [
+        [
+          {
+            "node": "❓ Sora Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Sora Failed?": {
+      "main": [
+        [
+          {
+            "node": "🎥 Google Veo 3 - Fallback Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔗 Merge Video Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎥 Google Veo 3 - Fallback Video": {
+      "main": [
+        [
+          {
+            "node": "❓ Veo Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Veo Failed?": {
+      "main": [
+        [
+          {
+            "node": "🎭 Runway Gen-3 - Fallback 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔗 Merge Video Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎭 Runway Gen-3 - Fallback 2": {
+      "main": [
+        [
+          {
+            "node": "❓ Runway Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Runway Failed?": {
+      "main": [
+        [
+          {
+            "node": "🌙 Luma Dream Machine - Fallback 3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔗 Merge Video Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌙 Luma Dream Machine - Fallback 3": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge Video Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎨 DALL-E 3 - Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge Video Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "🔗 Merge Video Results": {
+      "main": [
+        [
+          {
+            "node": "🎙️ ElevenLabs - Voiceover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎙️ ElevenLabs - Voiceover": {
+      "main": [
+        [
+          {
+            "node": "📦 Package Final Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📦 Package Final Assets": {
+      "main": [
+        [
+          {
+            "node": "📺 YouTube Shorts Upload",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📱 Instagram Reels Upload",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🎵 TikTok Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📺 YouTube Shorts Upload": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge Upload Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Instagram Reels Upload": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge Upload Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "🎵 TikTok Upload": {
+      "main": [
+        [
+          {
+            "node": "🔗 Merge Upload Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "🔗 Merge Upload Results": {
+      "main": [
+        [
+          {
+            "node": "📊 Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "💬 Send Telegram Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Log to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "✅ Final Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💬 Send Telegram Notification": {
+      "main": [
+        [
+          {
+            "node": "✅ Final Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

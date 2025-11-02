@@ -1,0 +1,25 @@
+project_id = "aeyttgjcelloseqdenpn"
+
+[functions.collect-trends]
+verify_jwt = false
+
+[functions.analyze-trends]
+verify_jwt = false
+
+[functions.get-stats]
+verify_jwt = false
+
+[functions.run-pipeline]
+verify_jwt = false
+
+[functions.generate-content]
+verify_jwt = false
+
+[functions.generate-narrator-text]
+verify_jwt = false
+
+[functions.adapt-prompt]
+verify_jwt = false
+
+[functions.process-single-link]
+verify_jwt = false
